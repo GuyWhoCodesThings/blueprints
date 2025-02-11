@@ -1,0 +1,32 @@
+.footer {
+    background-color: var(--dark-grey);
+    color: var(--white);
+    padding: 1rem 0;
+  }
+  
+  .footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .footer-text {
+    padding: 10px;
+    font-size: 0.875rem;
+  }
+  
+  .footer-nav {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .footer-link {
+    color: var(--light-blue);
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  
+  .footer-link:hover {
+    color: var(--secondary-blue);
+  }
+  
