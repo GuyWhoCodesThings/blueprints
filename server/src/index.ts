@@ -1,16 +1,26 @@
 import express from "express";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
+import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+
+const server = new McpServer({
+  name: "Echo",
+  version: "1.0.0"
+});
+
+server.tool(
+  "echo",
+  { message: z.string() },
+  async ({ message }) => ({
+    content: [{ type: "text", text: `Tool echo: ${message} - from your favorite server (:` }]
+  })
+);
+
 
 const PORT = 3001;
 const app = express();
 
-const server = new Server({
-  name: "example-server",
-  version: "1.0.0"
-}, {
-  capabilities: {}
-});
 
 let transport: SSEServerTransport | null = null;
 
