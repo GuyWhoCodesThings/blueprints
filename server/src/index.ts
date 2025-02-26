@@ -8,12 +8,29 @@ import {
   ListPromptsRequestSchema,
   GetPromptRequestSchema
 } from "@modelcontextprotocol/sdk/types.js";
+import { ECHO_TOOL } from "./tools";
 
 const TOOL_CAPACITY = 10;
 const PORT = 3001;
 const app = express();
 
-const toolCache: ToolCache<number, string> = new LRU(10);
+let transport: SSEServerTransport | null = null;
+
+app.get("/sse", (req, res) => {
+  transport = new SSEServerTransport("/messages", res);
+  server.connect(transport);
+});
+
+app.post("/messages", (req, res) => {
+  if (transport) {
+    transport.handlePostMessage(req, res);
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`connected to port ${PORT}`);
+});
+
 
 const server = new Server(
   {
@@ -28,25 +45,19 @@ const server = new Server(
   }
 );
 
-// Define tools
-const tools = [
-  {
-    name: "echo",
-    description: "Echo a message",
-    parameters: {
-      type: "object",
-      properties: {
-        message: { type: "string" }
-      },
-      required: ["message"]
-    }
-  }
-];
+const sseTransports = new Map<SSEServerTransport, string>();
 
 // need to override this to use LRU cache with sse uids
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  return { tools };
+  if (!transport) {
+    throw new Error(`must be connected via sse to list tools`);
+  }
+  const uuid = sseTransports.get(transport);
+  // Add the UUID to the tool list
+  const toolsWithUuid = [{ ...ECHO_TOOL, uuid }];
+  return { tools: toolsWithUuid };
 });
+
 
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
@@ -58,9 +69,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
     switch (name) {
       case "echo": {
-        if (!args.message) {
-          throw new Error("Invalid arguments for echo");
-        }
         const message = args.message;
         return {
           content: [{ type: "text", text: `Tool echo: ${message} - from your favorite server (:` }],
@@ -84,21 +92,4 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       isError: true,
     };
   }
-});
-
-let transport: SSEServerTransport | null = null;
-
-app.get("/sse", (req, res) => {
-  transport = new SSEServerTransport("/messages", res);
-  server.connect(transport);
-});
-
-app.post("/messages", (req, res) => {
-  if (transport) {
-    transport.handlePostMessage(req, res);
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`connected to port ${PORT}`);
 });

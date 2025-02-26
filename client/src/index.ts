@@ -1,5 +1,6 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { v4 as uuidv4 } from 'uuid'; // npm install uuid
 
 async function main() {
     const url = new URL("http://localhost:3001/sse");
