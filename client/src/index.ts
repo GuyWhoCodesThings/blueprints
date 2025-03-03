@@ -1,10 +1,12 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { v4 as uuidv4 } from 'uuid'; // npm install uuid
+import { JSONRPCMessage } from "@modelcontextprotocol/sdk/types.js";
 
 async function main() {
-    const url = new URL("http://localhost:3001/sse");
-    const transport = new SSEClientTransport(url);
+    const url = new URL("http://localhost:8080/sse");
+    const transport = new SSEClientTransport(url);    
+
+
     const client = new Client(
     {
       name: "example-client",
@@ -16,36 +18,29 @@ async function main() {
         resources: {},
         tools: {}
       }
-    }
-  );
+    });
+   
+    await client.connect(transport);
 
-  await client.connect(transport);
+    const tools = await client.listTools();
+    console.log("Available tools:", tools);
 
-  // Implement your client logic here
-  // For example:
-//   const resources = await client.listResources();
-//   console.log("Available resources:", resources);
+    // console.log("Calling echo tool");
+    // const result = await client.callTool({
+    //     name: 'echo',
+    //     arguments: {
+    //         message: "Hello, server!"
+    //     }
+    // });
+    // console.log("Echo response:", result);
 
-  const tools = await client.listTools();
-  console.log("Available tools:", tools);
-
-  // using the echo tool
-  const result = await client.callTool({
-    name: 'echo',
-    arguments: {
-      // Include the necessary arguments based on the inputSchema
-      message: "Hello, server!"
-    }
-  });
-  
-  console.log("Echo response:", result);
-
-  // Keep the connection open
-  process.on('SIGINT', () => {
-    console.log('Closing client connection...');
-    client.close();
-    process.exit();
-  });
+    process.on('SIGINT', () => {
+        console.log('Closing client connection...');
+        client.close();
+        process.exit();
+    });
 }
 
-main().catch(console.error);
+main().catch((error) => {
+    console.error("Main function error:", error);
+});
